@@ -7,7 +7,7 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
 ]
-
+# 깃 브랜치 트리 테스트
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns += [
