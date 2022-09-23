@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
+from django.shortcuts import resolve_url
+
 
 #  인스타그램 프로필
 #  이름, 사용자 이름, 웹사이트, 소개, 이메일, 전화번호, 성별
@@ -25,3 +27,18 @@ class User(AbstractUser):
     # 이렇게 이미지 파일을 지정해 놓으면 form을 보여주는 html에서 <form 안에 enctype="Multipart/form-data"
     # 되어있는지 확인하고, 받는 view 단에서 request.FILES와 같이 파일을 받는지 확인해야함
     # 그리고 pillow 설치 되어있는지 확인
+
+    @property
+    def name(self):
+        return f"{self.first_name} {self.last_name}"
+    # 유저의 풀네임을 보여주기 위해서!
+
+    @property
+    def avatar_url(self):
+        if self.avatar:
+            return self.avatar.url
+        else:
+            return resolve_url("pydenticon_image", self.username)
+
+
+    # 유저의 아바타가 없는 경우를 대비하기 위해서!

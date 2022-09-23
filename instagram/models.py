@@ -19,9 +19,10 @@ class Post(models.Model):
 #     Tag라는 모델을 가져온다는 것. ManyToMany를 쓰는 이유는 여러 포스트가 있고 여러 태그가 존재하기 떄문
     location = models.CharField(max_length=100)
 
-    # def get_absolute_url(self):
-    #     return reverse()
+    def get_absolute_url(self):
+        return reverse("instagram:post_detail", args=[self.pk])
     # get_absolute_url을 구현하려면 detailView도 구현해야함.
+    # return reverse("instagram:post_detail", kwargs={"pk": self.pk}) 이렇게 써도 됨
 
     def __str__(self):
         return self.caption
