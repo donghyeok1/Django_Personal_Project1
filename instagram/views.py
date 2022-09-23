@@ -41,7 +41,11 @@ def user_page(request, username):
     page_user = get_object_or_404(get_user_model(), username=username, is_active=True)
     # 현재 접근이 허용된 사람만 보겠다.
     post_list = Post.objects.filter(author=page_user)
+    post_list_count = post_list.count()
+    # 실제 데이터베이스에 count 쿼리를 던지게 됨.
+    # len(post_list)를 쓰게 되면 리스트의 갯수가 많을 떄 느리게 동작함!
     return render(request, "instagram/user_page.html", {
         "page_user": page_user,
         "post_list": post_list,
+        "post_list_count": post_list_count,
     })

@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'bootstrap4',
     'debug_toolbar',
     'django_pydenticon',
+    'easy_thumbnails',
+    # https://github.com/SmileyChris/easy-thumbnails
     # Local Apps
     'accounts',
     'instagram',
