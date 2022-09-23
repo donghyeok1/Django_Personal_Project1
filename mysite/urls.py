@@ -9,6 +9,7 @@ from django_pydenticon.views import image as pydenticon_image
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
+    path('', include('instagram.urls')),
     path('identicon/image/<path:data>/', pydenticon_image, name='pydenticon_image'),
     # pydenticon을 쓰기위한 순서
     # pip install django-pydenticon
