@@ -1,9 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
-from django.contrib.auth.views import LoginView, logout_then_login
-from accounts.forms import SignupForm, ProfileForm
+from django.contrib.auth.views import (
+    LoginView, logout_then_login,
+    PasswordChangeView as AuthPasswordChangeView)
+from django.urls import reverse_lazy
+
+# ,로 구분되는 단위는 튜플을 다 쓸 수 있다.
+from accounts.forms import SignupForm, ProfileForm, PasswordChangeForm
 
 login = LoginView.as_view(template_name="accounts/login_form.html")
 # 로그인 ui를 바꾸고 싶다면 getbootsrap 페이지로 가서 documentation에 card 레이아웃을 찾아라
@@ -58,3 +64,25 @@ def profile_edit(request):
     return render(request, "accounts/profile_edit_form.html", {
         'form' : form,
     })
+
+class PasswordChangeView(LoginRequiredMixin, AuthPasswordChangeView):
+    success_url = reverse_lazy("password_change")
+    template_name = 'accounts/password_change_form.html'
+    form_class = PasswordChangeForm
+
+    def form_valid(self, form):
+        messages.success(self.request, "암호를 변경했습니다.")
+        return super().form_valid(form)
+
+
+
+# 깃허브에 들어가서 PasswordChangeView를 보면 기본 템플릿인 template_name이 정해져있다.
+# 커스텀 해주도록 하자.
+# 물론 success_url도 커스톰한다.
+# form_valid를 커스텀하는데 super로 기본 form_valid를 호출하고 messages 기능만 넣어준다.
+# 그런데 이전 암호와 바꿀 암호가 같아도 변경이 된다.
+# form을 바꿔주도록 하자
+# 커스텀한 form을 넣을 것이기 떄문에 form_class를 다시 정의해주자.
+
+
+password_change = PasswordChangeView.as_view()
