@@ -1,0 +1,13 @@
+{% load bootstrap4 %}
+
+
+<form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+        <button type="submit" class="btn btn-primary">
+            {{ submit_label|default:"Submit" }}
+        </button>
+    {% endbuttons %}
+    {# 장고 bootstrap 페이지 가서 예제 쪽에 버튼 예제 보면 이대로 쓰라고 나와있음 #}
+</form>
