@@ -8,4 +8,5 @@ urlpatterns = [
     # 루트페이지로 가보면 accounts/login url을 따라가게됨
     path('logout/', views.logout, name='logout'),
     path('signup/', views.signup, name='signup'),
+    path('edit/', views.profile_edit, name='profile_edit'),
 ]

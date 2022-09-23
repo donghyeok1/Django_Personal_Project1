@@ -1,9 +1,9 @@
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView, logout_then_login
-from accounts.forms import SignupForm
-
+from accounts.forms import SignupForm, ProfileForm
 
 login = LoginView.as_view(template_name="accounts/login_form.html")
 # 로그인 ui를 바꾸고 싶다면 getbootsrap 페이지로 가서 documentation에 card 레이아웃을 찾아라
@@ -42,3 +42,19 @@ def signup(request):
 
 # https://sendgrid.com/docs/for-developers/sending-email/django/
 # 회원 가입 email 보내기 send_mail API(SMTP)
+
+@login_required
+def profile_edit(request):
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "프로필을 수정/저장했습니다.")
+            return redirect("profile_edit")
+    #     프로필 수정을 했을때 POST 통신
+    else:
+        form = ProfileForm(instance=request.user)
+    #     프로필을 불러올 때 GET 통신
+    return render(request, "accounts/profile_edit_form.html", {
+        'form' : form,
+    })
