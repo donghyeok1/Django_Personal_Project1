@@ -1,0 +1,35 @@
+{% extends "instagram/layout.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row pt-5 pb-5">
+            <div class="col-sm-3" style="text-align: center;">
+                <img src="{{ user.avatar_url }}" class="rounded-circle" style="width: 160px;" />
+            </div>
+            <div class="col-sm-9">
+                {{ page_user.username }}
+                <a href="{% url "profile_edit" %}" class="btn btn-secondary btn-sm">
+                    Edit Profile
+                </a>
+                <hr/>
+                0 posts, 0 followers, 0 following
+                <hr/>
+                {{ page_user.name }}
+            </div>
+            <div class="col-sm-12">
+                <div class="row mt-3">
+                    {% for post in post_list %}
+                        <div class="col-sm-4">
+                            <img src="{{ post.photo.url }}" alt="{{ post.caption }}" style="width: 100%;"/>
+                        </div>
+{#                        alt는 해당 이미지가 보여지지 않을때 해당 이미지의 설명을 할 수 있기 떄문#}
+{#                        이렇게 하면 이미지가 정사각형인것만 정사각형으로 나타남#}
+{#                        정사각형이 아닌것도 받고 싶은데 이 화면에서만 정사각형으로 나타내기 위해서는?#}
+{#                        Crop을 해서 이미지를 짤라내야함#}
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
