@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.views import (
     LoginView, logout_then_login,
     PasswordChangeView as AuthPasswordChangeView)
@@ -10,6 +10,7 @@ from django.urls import reverse_lazy
 
 # ,로 구분되는 단위는 튜플을 다 쓸 수 있다.
 from accounts.forms import SignupForm, ProfileForm, PasswordChangeForm
+from accounts.models import User
 
 login = LoginView.as_view(template_name="accounts/login_form.html")
 # 로그인 ui를 바꾸고 싶다면 getbootsrap 페이지로 가서 documentation에 card 레이아웃을 찾아라
@@ -86,3 +87,26 @@ class PasswordChangeView(LoginRequiredMixin, AuthPasswordChangeView):
 
 
 password_change = PasswordChangeView.as_view()
+@login_required
+def user_follow(request, username):
+    follow_user = get_object_or_404(User, username=username, is_active=True)
+
+    # request.user가 follow_user를 팔로우 할려고 합니다.
+    request.user.following_set.add(follow_user)
+    follow_user.follower_set.add(request.user)
+
+    messages.success(request, f"{follow_user}님을 팔로우했습니다.")
+    redirect_url = request.META.get("HTTP_REFERER", "root")
+    # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.
+    return redirect(redirect_url)
+@login_required
+def user_unfollow(request, username):
+    unfollow_user = get_object_or_404(User, username=username, is_active=True)
+
+    request.user.following_set.remove(unfollow_user)
+    unfollow_user.follower_set.remove(request.user)
+
+    messages.success(request, f"{unfollow_user}님을 언팔했습니다.")
+    redirect_url = request.META.get("HTTP_REFERER", "root")
+    # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.
+    return redirect(redirect_url)

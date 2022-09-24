@@ -19,6 +19,10 @@ class User(AbstractUser):
         MALE = "M", "남성"
         FEMALE = "F", "여성"
 
+    follower_set = models.ManyToManyField("self", blank=True)
+    # self로 지정하면 유저간의 관계로 지정가능
+    following_set = models.ManyToManyField("self", blank=True)
+
     website_url = models.URLField(blank=True)
     bio = models.TextField(blank=True)
     phone_number = models.CharField(max_length=13, blank=True, validators=[RegexValidator(r"010-?[1-9]\d{3}-?\d{4}$")])
@@ -39,6 +43,12 @@ class User(AbstractUser):
             return self.avatar.url
         else:
             return resolve_url("pydenticon_image", self.username)
-
-
     # 유저의 아바타가 없는 경우를 대비하기 위해서!
+
+    @property
+    def follower_count(self):
+        return self.follower_set.count()
+
+    @property
+    def following_count(self):
+        return self.following_set.count()

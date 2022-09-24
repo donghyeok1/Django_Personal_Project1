@@ -9,11 +9,23 @@
             </div>
             <div class="col-sm-9">
                 {{ page_user.username }}
-                <a href="{% url "profile_edit" %}" class="btn btn-secondary btn-sm">
-                    Edit Profile
-                </a>
+                {% if user == page_user %}
+                    <a href="{% url "profile_edit" %}" class="btn btn-secondary btn-sm">
+                        Edit Profile
+                    </a>
+                {% else %}
+                    {% if is_follow %}
+                        <a href="{% url "user_unfollow" page_user.username %}">
+                            Unfollow
+                        </a>
+                    {% else %}
+                        <a href="{% url "user_follow" page_user.username %}">
+                            Follow
+                        </a>
+                    {% endif %}
+                {% endif %}
                 <hr/>
-                {{ post_list_count }} posts, 0 followers, 0 following
+                {{ post_list_count }} posts, {{ page_user.follower_count }} followers, {{ page_user.following_count }} following
                 <hr/>
                 {{ page_user.name }}
             </div>
@@ -21,7 +33,9 @@
                 <div class="row mt-3">
                     {% for post in post_list %}
                         <div class="col-sm-4 mb-3">
-                            <img src="{% thumbnail post.photo 512x512 crop %}" alt="{{ post.caption }}" style="width: 100%;"/>
+                            <a href="{% url "instagram:post_detail" post.id %}">
+                                <img src="{% thumbnail post.photo 512x512 crop %}" alt="{{ post.caption }}" style="width: 100%;"/>
+                            </a>
                         </div>
 {#                        alt는 해당 이미지가 보여지지 않을때 해당 이미지의 설명을 할 수 있기 떄문#}
 {#                        이렇게 하면 이미지가 정사각형인것만 정사각형으로 나타남#}
