@@ -23,6 +23,8 @@ urlpatterns = [
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
     path('post/<int:pk>/like/', views.post_like, name='post_like'),
     path('post/<int:pk>/unlike/', views.post_unlike, name='post_unlike'),
+    path('post/<int:post_pk>/comment/new', views.comment_new, name='comment_new'),
+    # 그냥 comment의 pk랑 헷갈릴수도 있기 때문에 post_pk라고 씀.
     re_path(r'^(?P<username>[\w.@+-]+)/$', views.user_page, name='user_page'),
 ]
 #   이렇게 되면 username이 post라면 위에서 걸러지게 되서 밑에까지 못오게 됨.

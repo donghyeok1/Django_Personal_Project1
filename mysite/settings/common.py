@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     # Django Apps
     'django.contrib.admin',
     'django.contrib.auth',
+    'django.contrib.humanize',
+    # https://docs.djangoproject.com/en/4.1/ref/contrib/humanize/
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',

@@ -1,5 +1,4 @@
-{% load thumbnail %}
-{% load instagram_tags %}
+{% load thumbnail humanize instagram_tags %}
 <div class="card">
     <div class="card-header">
         <img src="{{ post.author.avatar_url }}" style="width: 32px; height: 32px;"/>
@@ -10,31 +9,55 @@
     <div class="card-body">
 
         <img src="{% thumbnail post.photo 512x512 crop %}" alt="{{ post.caption }}" style="width: 100%;"/>
-
-        {% for tag in post.tag_set.all %}
-            <span class="badge text-bg-primary">#{{ tag.name }}</span>
-        {% endfor %}
-
-    </div>
-    <div class="card-footer">
+        <div>
+            {% if post|is_like_user:user %}
+                <a href="{% url "instagram:post_unlike" post.pk %}" style="color: inherit;">
+                    <i class="fa-solid fa-heart"></i>
+                {#            스타일을 inherit로 주게 되면 색깔이 바뀌지 않음!#}
+                </a>
+            {% else %}
+                <a href="{% url "instagram:post_like" post.pk %}" style="color: inherit;">
+                    <i class="fa-regular fa-heart"></i>
+                </a>
+            {% endif %}
+        </div>
+            <div class="comment-list mt-3 mb-3">
+                {% for comment in post.comment_set.all %}
+                    <div>
+                        <strong>{{ comment.author }}</strong>
+                        {{ comment.message }}
+                        <small class="text-muted">{{ comment.created_at|naturaltime }}</small>
+                    </div>
+                {% endfor %}
+            </div>
+        <div>
+            {% for tag in post.tag_set.all %}
+                <span class="badge text-bg-primary">#{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+        <div>
+            <a href="{{ post.get_absolute_url }}" style="" class="text-muted">
+                <small>
+                    {{ post.created_at|naturaltime }}
+                </small>
+            </a>
+        </div>
+{#장고 단에 여러 패키지가 있는데 humanize라는 앱이 있다.#}
+{#필터 적용해주는 앱임.#}
+{#https://docs.djangoproject.com/en/4.1/ref/contrib/humanize/#}
+{#_post_card 단에서 구현할것!#}
+{#해당 링크로 들어가서 설명 잘 읽고 따라하면 됨.#}
 {#        html에서는 파라미터를 줄 수 없기 떄문에 파라미터를 주려면 해당 앱에#}
 {#        templatetags라는 디렉토리를 만듬#}
 {#https://docs.djangoproject.com/en/1.10/howto/custom-template-tags/#}
 {#        하라는데로 똑같이 하면 됨#}
 {#        사용할 템플릿 단에서 load 해줘야함 지금 해당 템플릿 맨 위에처럼#}
-        {% if post|is_like_user:user %}
-            <a href="{% url "instagram:post_unlike" post.pk %}" style="color: inherit;">
-                <i class="fa-solid fa-heart"></i>
-            {#            스타일을 inherit로 주게 되면 색깔이 바뀌지 않음!#}
-            </a>
-        {% else %}
-            <a href="{% url "instagram:post_like" post.pk %}" style="color: inherit;">
-                <i class="fa-regular fa-heart"></i>
-            </a>
-        {% endif %}
 {#        Font Awesome이라는 곳에서 하트 아이콘 가져오기#}
 {#        layout단에다가 css에 적용 https 뺴고 적용!#}
 {#        그렇게 적용한 후 다시 font awesome 접속#}
 {#        hearts 검색#}
+    </div>
+    <div class="card-footer">
+        <a href="{% url "instagram:comment_new" post.pk %}">댓글 쓰기</a>
     </div>
 </div>

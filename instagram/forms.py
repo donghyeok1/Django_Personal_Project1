@@ -1,5 +1,6 @@
 from django import forms
-from .models import Post
+from .models import Post, Comment
+
 
 class PostForm(forms.ModelForm):
     class Meta:
@@ -16,3 +17,8 @@ class PostForm(forms.ModelForm):
 # 그리고 widgets를 써서 위처럼 쓰면 쓸 수 있는 상자 공간이 더 넓어짐.
 # tag_set을 caption에서 뽑아낸다는것이 무슨 말일까?
 # #이 들어간 문자를 쓰면 그건 태그!
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['message']

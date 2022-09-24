@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 
-from instagram.forms import PostForm
+from instagram.forms import PostForm, CommentForm
 from .models import Tag, Post
 
 
@@ -105,4 +105,20 @@ def user_page(request, username):
         "post_list": post_list,
         "post_list_count": post_list_count,
         "is_follow": is_follow,
+    })
+@login_required
+def comment_new(request, post_pk):
+    post = get_object_or_404(Post, pk=post_pk)
+    if request.method == "POST":
+        form = CommentForm(request.POST, request.FILES)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            return redirect(comment.post)
+    else:
+        form = CommentForm()
+    return render(request, "instagram/comment_form.html", {
+        "form": form
     })
