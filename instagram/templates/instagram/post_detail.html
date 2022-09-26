@@ -1,5 +1,5 @@
 {% extends "instagram/layout.html" %}
-{% load thumbnail humanize instagram_tags %}
+{% load thumbnail humanize instagram_tags bootstrap4 %}
 {% block content %}
     <div class="card">
         <div class="card-header">
@@ -23,13 +23,9 @@
                     </a>
                 {% endif %}
             </div>
-                <div class="comment-list mt-3 mb-3">
+                <div id = "post-detail-{{ post.pk }}-comment-list" class="comment-list mt-3 mb-3">
                     {% for comment in post.comment_set.all %}
-                        <div>
-                            <strong>{{ comment.author }}</strong>
-                            {{ comment.message }}
-                            <small class="text-muted">{{ comment.created_at|naturaltime }}</small>
-                        </div>
+                        {% include "instagram/_comment.html" %}
                     {% endfor %}
                 </div>
             <div>
@@ -58,7 +54,50 @@
     {#        hearts 검색#}
         </div>
         <div class="card-footer">
-            <a href="{% url "instagram:comment_new" post.pk %}">댓글 쓰기</a>
-        </div>
+        <form id="post-detail-{{ post.pk }}-comment-form" action="{% url "instagram:comment_new" post.pk %}" method="POST">
+            {% csrf_token %}
+            {% bootstrap_form comment_form %}
+            <input type="submit" value="댓글 쓰기" class="btn btn-primary btn-block">
+        </form>
+{#        이렇게 쓰면 메세지 창이 너무 크게 나옴. 이 위젯을 커스텀 하고 싶으면 form에서 바꿔야함.#}
+
+
+        <script>
+            $(function(){
+                var form_id = "post-detail-{{ post.pk }}-comment-form";
+                $("#" + form_id).submit(function(e){
+                    e.preventDefault();
+                {#https://malsup.github.io/jquery.form.js#}
+{#                    다운로드 받기 후 static 파일에 옮기기#}
+{#                    그리고 layout 파일로 가서 추가#}
+{#                    그 후 페이지에 가서 네트워크를 열고 jquery를 치면 import 된걸 확인 할 수 잇음.#}
+{#                    https://malsup.com/jquery/form/#ajaxForm 여기서 문서를 보면서 이해 가능#}
+{#$document).ready 와 위에 function만 쓴건 같은 문법임. 축약 문법이다.#}
+{#                    ajaxSubmit 으로 가서 보면 됨.#}
+
+                    var options = {
+                        success: function(responseText, statusText, xhr, $form){
+                            console.group("ajaxSubmit response");
+                            $("#post-detail-{{ post.pk }}-comment-list").prepend(responseText);
+                            console.log(responseText);
+                            console.log(statusText);
+                            console.log(xhr);
+                            console.log($form);
+                            console.groupEnd();
+                        },
+                        clearForm: true,
+                    }
+                    $(this).ajaxSubmit(options);
+                {#    jquery를 통해서 submit이 되는 것임.#}
+
+                {#    거짓으로 리턴한다던지, 이벤트 객체 e로 e.preventDefault로#}
+{#                    호출을 해주면 이벤트가 더이상 전파되지 않고 현재 상황에서 멈추게 됨#}
+                })
+            })
+        </script>
+{#        jQuery를 쓰는 방법#}
+{#        id를 지정#}
+
+    </div>
     </div>
 {% endblock %}

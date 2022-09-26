@@ -7,7 +7,7 @@ class PostForm(forms.ModelForm):
         model = Post
         fields = ['photo', 'caption', 'location']
         widgets = {
-            "caption": forms.Textarea
+            "caption": forms.Textarea,
         }
 
 # 왜 author와 tag_set이 fields에 없을까?
@@ -22,3 +22,6 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ['message']
+        widgets = {
+            "message": forms.Textarea(attrs={"rows":2}),
+        }

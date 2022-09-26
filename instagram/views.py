@@ -32,9 +32,11 @@ def index(request):
     # exclude는 제외하겠다는 뜻 필터와 비슷함.
     # 만약 팔로우를 하면 사이드 바에 이름이 없어지게 하는 것임.
     # 다 보여주는 것이 아닌 3명까지만 보여주는것!
+    comment_form = CommentForm()
     return render(request, "instagram/index.html", {
         "suggested_user_list": suggested_user_list,
         "post_list": post_list,
+        "comment_form": comment_form,
     })
 
 @login_required
@@ -63,8 +65,11 @@ def post_new(request):
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
+    comment_form = CommentForm()
+    # if request.is_ajax(): 이건 장고 4버전부터 없어짐
     return render(request, "instagram/post_detail.html", {
         "post" : post,
+        "comment_form": comment_form,
     })
 
 @login_required
@@ -116,6 +121,14 @@ def comment_new(request, post_pk):
             comment.post = post
             comment.author = request.user
             comment.save()
+            # if request.is_ajax(): 이건 장고 4버전부터 없어짐
+            if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+                # 이게 is_ajax 기능을 4버전에서 이렇게 씀
+                # ajax로 댓글을 썻으면 전체 페이지를 응답으로 주지말고 코멘트 하나를 따로
+                # html로 만들어서 응답하게 해줘야 새로고침 안되고 댓글이 업데이트가 된다!
+                return render(request, "instagram/_comment.html", {
+                    "comment": comment,
+                })
             return redirect(comment.post)
     else:
         form = CommentForm()
