@@ -18,10 +18,11 @@ class PostForm(forms.ModelForm):
 # tag_set을 caption에서 뽑아낸다는것이 무슨 말일까?
 # #이 들어간 문자를 쓰면 그건 태그!
 
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ['message']
         widgets = {
-            "message": forms.Textarea(attrs={"rows":2}),
+            "message": forms.Textarea(attrs={"rows": 2}),
         }

@@ -21,13 +21,15 @@ class BaseModel(models.Model):
 
 
 class Post(BaseModel):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="my_post_set", on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="my_post_set", on_delete=models.CASCADE)
     photo = models.ImageField(upload_to="instagram/post/%Y/%m/%d")
     caption = models.CharField(max_length=500)
     tag_set = models.ManyToManyField('Tag', blank=True)
 #     Tag라는 모델을 가져온다는 것. ManyToMany를 쓰는 이유는 여러 포스트가 있고 여러 태그가 존재하기 떄문
     location = models.CharField(max_length=100)
-    like_user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="like_post_set",blank=True)
+    like_user_set = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="like_post_set", blank=True)
     # manytomany 모델 정의하는 법 첫번째. 모델 안에 ManyToMany필드로 집어넣는다
     # 두번째는 직접 LikeUser라는 모델을 만들어서 post와 user를 외래키로 참조한다.
     # 세번째는 직접 정의한 모델을 Post 모델안에 ManytoMany 필드로 집어넣어준다!
@@ -67,11 +69,12 @@ class Post(BaseModel):
         return tag_list
 
     def is_like_user(self, user):
-#         좋아요를 눌렀을때와 안눌렀을떄의 하트를 다르게 하기 위함!
+        #         좋아요를 눌렀을때와 안눌렀을떄의 하트를 다르게 하기 위함!
         return self.like_user_set.filter(pk=user.pk).exists()
 
     class Meta:
         ordering = ['-id']
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -79,9 +82,12 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+
 class Comment(BaseModel):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     message = models.TextField()
+
     class Meta:
         ordering = ['-id']

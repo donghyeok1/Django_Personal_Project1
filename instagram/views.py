@@ -21,14 +21,15 @@ def index(request):
     post_list = Post.objects\
         .filter(
             Q(author=request.user)
-                |
+            |
             Q(author__in=request.user.following_set.all())
-    )
+        )
     # .filter(
     #     created_at__gte=timesince # greater than equal
     # )
     # 최근 시간에서 3일을 뺀 시간보다 큰 포스팅만 가져오겠다!
-    suggested_user_list = get_user_model().objects.all().exclude(pk=request.user.pk).exclude(pk__in=request.user.following_set.all())[:3]
+    suggested_user_list = get_user_model().objects.all().exclude(
+        pk=request.user.pk).exclude(pk__in=request.user.following_set.all())[:3]
     # exclude는 제외하겠다는 뜻 필터와 비슷함.
     # 만약 팔로우를 하면 사이드 바에 이름이 없어지게 하는 것임.
     # 다 보여주는 것이 아닌 3명까지만 보여주는것!
@@ -38,6 +39,7 @@ def index(request):
         "post_list": post_list,
         "comment_form": comment_form,
     })
+
 
 @login_required
 def post_new(request):
@@ -60,17 +62,19 @@ def post_new(request):
         form = PostForm()
 
     return render(request, "instagram/post_form.html", {
-        "form" : form,
+        "form": form,
     })
+
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     comment_form = CommentForm()
     # if request.is_ajax(): 이건 장고 4버전부터 없어짐
     return render(request, "instagram/post_detail.html", {
-        "post" : post,
+        "post": post,
         "comment_form": comment_form,
     })
+
 
 @login_required
 def post_like(request, pk):
@@ -81,6 +85,8 @@ def post_like(request, pk):
     redirect_url = request.META.get("HTTP_REFERER", "root")
     # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.
     return redirect(redirect_url)
+
+
 @login_required
 def post_unlike(request, pk):
     post = get_object_or_404(Post, pk=pk)
@@ -92,7 +98,8 @@ def post_unlike(request, pk):
 
 
 def user_page(request, username):
-    page_user = get_object_or_404(get_user_model(), username=username, is_active=True)
+    page_user = get_object_or_404(
+        get_user_model(), username=username, is_active=True)
     # 현재 접근이 허용된 사람만 보겠다.
     post_list = Post.objects.filter(author=page_user)
     post_list_count = post_list.count()
@@ -111,6 +118,8 @@ def user_page(request, username):
         "post_list_count": post_list_count,
         "is_follow": is_follow,
     })
+
+
 @login_required
 def comment_new(request, post_pk):
     post = get_object_or_404(Post, pk=post_pk)

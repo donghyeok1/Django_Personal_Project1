@@ -4,3 +4,5 @@ django-bootstrap4
 pillow
 django-pydenticon
 easy-thumbnails
+requests
+python-magic-bin

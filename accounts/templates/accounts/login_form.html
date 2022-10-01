@@ -1,11 +1,30 @@
-{% extends "accounts/layout.html" %}
+{% extends "layout.html" %}
+{% load bootstrap4 static %}
 {% load bootstrap4 %}
-
 {% block content %}
     <div class="container">
         <div class="row">
             <div class="col-sm-6 offset-sm-3">
-                {% include "_form.html" with form_title="로그인" submit_label="로그인" %}
+                <div class="card">
+                  {% if form_title %}
+                  <div class="card-header">{{ form_title }}</div>
+                  {% endif %}
+                  <div class="card-body">
+                    <form action="" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        {% buttons %}
+                              <button type="submit" class="btn btn-primary">
+                                {{ submit_label|default:"로그인" }}
+                              </button>
+                        {% endbuttons %}
+                        <a href="{% url "accounts:signup-kakao" %}">
+                            <img src="{% static "kakao_logo.png" %}" alt="kakao_login" />
+                        </a>
+                            {# 장고 bootstrap 페이지 가서 예제 쪽에 버튼 예제 보면 이대로 쓰라고 나와있음 #}
+                    </form>
+                  </div>
+                </div>
             </div>
         </div>
     </div>

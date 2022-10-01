@@ -10,7 +10,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('instagram/', include('instagram.urls')),
-    path('identicon/image/<path:data>/', pydenticon_image, name='pydenticon_image'),
+    path('identicon/image/<path:data>/',
+         pydenticon_image, name='pydenticon_image'),
     # pydenticon을 쓰기위한 순서
     # pip install django-pydenticon
     # common.txt에 pillow와 django-pydenticon 추가
@@ -33,8 +34,7 @@ urlpatterns = [
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns += [
-	    path('__debug__/', include(debug_toolbar.urls)),
+        path('__debug__/', include(debug_toolbar.urls)),
     ]
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
