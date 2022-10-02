@@ -766,3 +766,197 @@ path('password_change/', views.password_change, name='password_change')
 - 이렇게 설정을 해준다.    
 - 왜 class이름과 다른가?
     - view 단에서 password_change = PasswordChangeView.as_view() 로 정의를 해주었기 때문이다.
+
+### template
+
+```html
+{% extends "accounts/layout.html" %} {% load bootstrap4 %} {% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6 offset-sm-3">
+      {% include "_form.html" with form_title="프로필 수정" submit_label="프로필 수정" %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+```
+
+- 위에서 미리 만들어준 _form.html을 불러와서 form_title과 submit_label을 설정해준다.
+
+## 팔로우 기능
+
+### view
+
+```python
+@login_required
+def user_follow(request, username):
+    follow_user = get_object_or_404(User, username=username, is_active=True)
+
+    # request.user가 follow_user를 팔로우 할려고 합니다.
+    request.user.following_set.add(follow_user)
+    follow_user.follower_set.add(request.user)
+
+    messages.success(request, f"{follow_user}님을 팔로우했습니다.")
+    redirect_url = request.META.get("HTTP_REFERER", "root")
+    # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.
+    return redirect(redirect_url)
+
+
+@login_required
+def user_unfollow(request, username):
+    unfollow_user = get_object_or_404(User, username=username, is_active=True)
+
+    request.user.following_set.remove(unfollow_user)
+    unfollow_user.follower_set.remove(request.user)
+
+    messages.success(request, f"{unfollow_user}님을 언팔했습니다.")
+    redirect_url = request.META.get("HTTP_REFERER", "root")
+
+    return redirect(redirect_url)
+```
+
+- url 상에서 username을 입력을 받는다.
+- username과 일치하는 User를 불러온다.
+     - 활성화된 계정만 불러온다.
+- 해당 페이지에 들어간 user는 username을 가진 user에게 follow를 거는 것이기 때문에 following_set을 건드린다.
+- 팔로우를 당한 사람은 follower_set을 건드려준다.
+    - follow_user는 페이지에 로그인한 유저가 팔로우 하고 싶은 유저이다.
+    - 그러므로 request.user는 로그인한 유저인데 그 유저의 following_set에 follow_user를 추가해준다.
+    - follow_user의 입장에서는 follower가 늘어나는 것이기 때문에 follow_user.follower_set에 request.user를 더해준다.
+- HTTP REFERER이 있으면 가져오고 없으면 root 페이지로 redirect_url을 설정해준다.
+    - return으로 redirect 해준다.
+- unfollow도 follow와 같은 로직이다.
+
+## 카카오 소셜 로그인
+
+### 사전 작업
+
+- kakao developer 사이트에 가서 REST_API_KEY와 REDIRECT_URI를 설정해준다.
+- settings에 따로 설정을 해주었다.
+    - redirect_uri는 'http://127.0.0.1:8000/accounts/signup/kakao/callback/' 로 설정해줬다.
+- 정보 제공에 필요한 정보들을 체크해준다.
+
+### view
+
+```python
+def kakao_login(request):
+    client_id = KAKAO_REST_API_KEY
+    redirect_uri = KAKAO_REDIRECT_URI
+    return redirect(
+        f"https://kauth.kakao.com/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=account_email"
+    )
+```
+
+- developer 사이트에 나와있는 가이드 대로 API_KEY와  REDIRECT_URI를 잘 활용해 login 페이지로 넘어가준다.
+- 그렇게 되면 정보 동의 요청 사이트가 뜨게 된다. 수락을 하게 된다면
+    - 우리가 설정해둔 redirect uri로 이동하게 된다.
+    - 우리는 url 단에서 redirect uri와 같은 uri를 정의해두고 함수를 만든다.
+- 위에 kakao_login 함수를 이용해 접근을 한 후, redirect uri 로 이동하게 되면 "code"를 받은 상태로 넘어가게 된다.
+
+```python
+def kakao_callback(request):
+    client_id = KAKAO_REST_API_KEY
+    code = request.GET.get("code")
+
+    redirect_uri = KAKAO_REDIRECT_URI
+    token_request = requests.get(
+        f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={client_id}&redirect_uri={redirect_uri}&code={code}"
+    )
+    token_json = token_request.json()
+
+    kakao_access_token = token_json.get("access_token")
+
+    profile_request = requests.post(
+        "https://kapi.kakao.com/v2/user/me",
+        headers={"Authorization": f"Bearer {kakao_access_token}"},
+    )
+
+    profile_json = profile_request.json()
+
+    kakao_account = profile_json.get("kakao_account")
+
+    email = kakao_account.get("email", None)
+
+    first_name = kakao_account.get("profile").get("nickname")
+
+    last_name = "_kakao"
+    avatar = kakao_account.get("profile").get("thumbnail_image_url")
+
+    temp_file = download(avatar)
+    file_name = '{urlparse}.{ext}'.format(
+        urlparse=urlparse(avatar).path.split('/')[-1].split('.')[0],
+        ext=get_buffer_ext(temp_file)
+    )
+
+    try:
+        user = User.objects.get(email=email)
+        if user.login_method == 'kakao':
+            update_last_login(None, user)
+            auth_login(request, user)
+            results = {
+                'id': user.id,
+                'email': email,
+            }
+            redirect_url = request.META.get("HTTP_REFERER", "root")
+
+            return redirect(redirect_url)
+    except get_user_model().DoesNotExist:
+        user = get_user_model().objects.create(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            login_method='kakao',
+            username=first_name,
+        )
+        user.avatar.save(file_name, File(temp_file))
+        user.set_unusable_password()
+        user.save()
+        auth_login(request, user)
+        update_last_login(None, user)
+
+        results = {
+            'id': user.id,
+            'email': email,
+        }
+        redirect_url = request.META.get("HTTP_REFERER", "root")
+
+        return redirect(redirect_url)
+    else:
+        return JsonResponse({'message':'user already exist'})
+```
+
+- code를 request.GET.get("code")으로 불러온다.
+- 그 code를 이용하여 
+
+```python
+"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={client_id}&redirect_uri={redirect_uri}&code={code}"
+```
+
+- 해당 사이트에서 token을 받아온다.
+    - 받아온 token을 json()을 이용해 token_json이라는 변수로 저장해준다.
+    - 그렇다면 token_json에는 access_token과 refresh_token이 있다.
+    - access_token을 이용해 사용자의 프로필 정보를 불러올 것이기 때문에 따로 저장해준다.
+        - refresh_token은 현 프로젝트에서 필요없다. 
+    - 헤더에 accesS_token을 실어서 프로필 정보를 다 받아온다.
+    - 필요한 정보들을 전부 빼온 후, 회원가입 혹은 로그인을 진행한다.
+    - 만약 해당 이메일을 가진 유저가 존재하는 경우
+        - 존재하는 유저가 카카오 계정으로 회원가입을 한 경우
+            - 이미 해당 카카오 계정으로 회원가입을 한 유저이기 때문에 장고에서 제공해주는 login 함수를 이용하여 로그인을 해준다.
+                - auth_login은 장고에서 제공해주는 login 함수를 우리가 편한데로 이름만 바꿔준 것이다.
+        - 해당 이메일을 가진 유저가 존재하지 않는 경우
+            - 해당 카카오 계정으로 회원가입을 진행해준다.
+                - create 함수를 이용하여 각 필드들을 채워주고 데이터 베이스에 저장해준다.
+                - 그 후, 장고에서 제공해주는 login 함수를 이용해 로그인 처리를 해준다.
+        - 존재하는 유저가 카카오 계정이 아닌 경우
+            - 이메일은 중복되면 안되는 것이기 때문에 이메일이 이미 존재한다는 에러 메세지를 띄워준다.
+
+### template
+
+```html
+<a href="{% url "accounts:signup-kakao" %}">
+    <img src="{% static "kakao_logo.png" %}" alt="kakao_login" />
+</a>
+```
+
+- signup_form과 login_form html에 추가해준다.
+- static 폴더에 있는 kakao_logo를 불러와주고 해당 이미지를 클릭하면 accounts 앱의 signup-kakao라는 name을 가진 url을 호출한다.

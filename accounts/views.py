@@ -175,7 +175,7 @@ def kakao_callback(request):
     )
 
     profile_json = profile_request.json()
-    print(profile_json)
+
     kakao_account = profile_json.get("kakao_account")
 
     email = kakao_account.get("email", None)
@@ -200,10 +200,7 @@ def kakao_callback(request):
         if user.login_method == 'kakao':
             update_last_login(None, user)
             auth_login(request, user)
-            results = {
-                'id': user.id,
-                'email': email,
-            }
+
             redirect_url = request.META.get("HTTP_REFERER", "root")
             # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.
             return redirect(redirect_url)
@@ -221,10 +218,6 @@ def kakao_callback(request):
         auth_login(request, user)
         update_last_login(None, user)
 
-        results = {
-            'id': user.id,
-            'email': email,
-        }
         redirect_url = request.META.get("HTTP_REFERER", "root")
         # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.
         return redirect(redirect_url)
