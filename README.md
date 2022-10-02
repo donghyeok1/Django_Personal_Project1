@@ -204,9 +204,7 @@ def signup(request):
         <div class="row">
             <div class="col-sm-6 offset-sm-3">
                 <div class="card">
-                  {% if form_title %}
-                  <div class="card-header">{{ form_title }}</div>
-                  {% endif %}
+                  <div class="card-header">회원가입</div>
                   <div class="card-body">
                     <form action="" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
@@ -266,3 +264,505 @@ path('signup/', views.signup, name='signup'),
 ```
 
 - 회원가입 url이다. 
+
+## 로그인 기능
+
+### views
+
+```python
+from django.contrib.auth.views import LoginView
+```
+
+- 장고에서 제공해주는 LoginView class를 사용하였다.
+
+- template은 우리가 지정한 login_form.html으로 바꿔준다.
+
+```python
+login = LoginView.as_view(template_name="accounts/login_form.html")
+```
+
+### urls
+
+```python
+path('login/', views.login, name='login')
+```
+
+### templates
+
+```html
+{% extends "layout.html" %}
+{% load bootstrap4 static %}
+{% load bootstrap4 %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6 offset-sm-3">
+                <div class="card">
+                  <div class="card-header">로그인</div>
+                  <div class="card-body">
+                    <form action="" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        {% buttons %}
+                              <button type="submit" class="btn btn-primary">
+                                {{ submit_label|default:"로그인" }}
+                              </button>
+                        {% endbuttons %}
+                        <a href="{% url "accounts:signup-kakao" %}">
+                            <img src="{% static "kakao_logo.png" %}" alt="kakao_login" />
+                        </a>
+                    </form>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+```
+
+- form은 LoginView class에서 지정해주는 form_class인 AuthenticationForm을 사용하였다.
+- 수행하고 난 후 다음 페이지로 이동하기 위한 url은 LoginView class의 resolove_url을 통해 이동된다.
+    - 만약 next_page가 있다면 로그인 후 next_page로 이동
+    - 없다면 루트 페이지인 "/"로 이동하게 된다.
+
+## 로그아웃 기능
+
+### views
+
+```python
+from django.contrib.auth.views from logout_then_login
+```
+
+장고에서 제공하는 logout_then_login 함수를 이용하였다.
+
+```python
+def logout(request):
+    messages.success(request, "로그아웃되었습니다.")
+    return logout_then_login(request)
+```
+
+- 위 프로젝트에서 사용한 logout 함수이다.
+
+```python
+def logout_then_login(request, login_url=None):
+    """
+    Log out the user if they are logged in. Then redirect to the login page.
+    """
+    login_url = resolve_url(login_url or settings.LOGIN_URL)
+    return LogoutView.as_view(next_page=login_url)(request)
+```
+
+- 장고에서 제공해주는 logout_then_login 함수이다.
+- logout 하고 나서 돌아갈 url을 설정해준 후 장고에서 제공해주는 LogoutView class를 리턴해준다.
+
+```python
+class LogoutView(RedirectURLMixin, TemplateView):
+    """
+    Log out the user and display the 'You are logged out' message.
+    """
+
+    # RemovedInDjango50Warning: when the deprecation ends, remove "get" and
+    # "head" from http_method_names.
+    http_method_names = ["get", "head", "post", "options"]
+    template_name = "registration/logged_out.html"
+    extra_context = None
+
+    # RemovedInDjango50Warning: when the deprecation ends, move
+    # @method_decorator(csrf_protect) from post() to dispatch().
+    @method_decorator(never_cache)
+    def dispatch(self, request, *args, **kwargs):
+        if request.method.lower() == "get":
+            warnings.warn(
+                "Log out via GET requests is deprecated and will be removed in Django "
+                "5.0. Use POST requests for logging out.",
+                RemovedInDjango50Warning,
+            )
+        return super().dispatch(request, *args, **kwargs)
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        """Logout may be done via POST."""
+        auth_logout(request)
+        redirect_to = self.get_success_url()
+        if redirect_to != request.get_full_path():
+            # Redirect to target page once the session has been cleared.
+            return HttpResponseRedirect(redirect_to)
+        return super().get(request, *args, **kwargs)
+
+    # RemovedInDjango50Warning.
+    get = post
+
+    def get_default_redirect_url(self):
+        """Return the default redirect URL."""
+        if self.next_page:
+            return resolve_url(self.next_page)
+        elif settings.LOGOUT_REDIRECT_URL:
+            return resolve_url(settings.LOGOUT_REDIRECT_URL)
+        else:
+            return self.request.path
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        current_site = get_current_site(self.request)
+        context.update(
+            {
+                "site": current_site,
+                "site_name": current_site.name,
+                "title": _("Logged out"),
+                "subtitle": None,
+                **(self.extra_context or {}),
+            }
+        )
+        return context
+```
+
+- logout을 하게 되면 장고에서 제공해주는 auth_logout 함수를 이용해 logout을 시켜준다.
+    - auth_logout은 logout을 auth_logout으로 재정의해서 쓴것이다.
+
+```python
+def logout(request):
+    """
+    Remove the authenticated user's ID from the request and flush their session
+    data.
+    """
+    # Dispatch the signal before the user is logged out so the receivers have a
+    # chance to find out *who* logged out.
+    user = getattr(request, "user", None)
+    if not getattr(user, "is_authenticated", True):
+        user = None
+    user_logged_out.send(sender=user.__class__, request=request, user=user)
+    request.session.flush()
+    if hasattr(request, "user"):
+        from django.contrib.auth.models import AnonymousUser
+
+        request.user = AnonymousUser()
+```
+
+- 회원가입을 했을 때 썻던 login 함수랑 로직이 비슷하다. 
+- logout은 template이 따로 필요없다.
+
+## 프로필 수정 구현
+
+### views
+
+```python
+@login_required
+def profile_edit(request):
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "프로필을 수정/저장했습니다.")
+            return redirect("profile_edit")
+    #     프로필 수정을 했을때 POST 통신
+    else:
+        form = ProfileForm(instance=request.user)
+    #     프로필을 불러올 때 GET 통신
+    return render(request, "accounts/profile_edit_form.html", {
+        'form': form,
+    })
+```
+
+- 프로필을 수정하기 위해서는 login이 되어 있는 상태여야 한다.
+    - login_required를 이용해서 login이 되어있는지 체크해준다.
+- 프로필 이미지 같은 FILE을 받을 수 있기 때문에 파라미터로 FILES를 써주는데, 주의해야 할 점은 첫번째 파라미터는 무조건 request.POST이고 두번째 파라미터는 request.FILES를 넣어주어야 한다.
+- 현재 로그인이 되어 있는 user의 정보를 가져와야 하기 때문에 instance를 request.user로 설정해준다.
+    - 그렇다면 ProfileForm에서 현재 user의 정보가 작성되어 있는 부분이 저장되어 있는 정보를 토대로 채워진다.
+- form 유효성 검사를 해주고 저장을 시킨다.
+    - redirect로 url에서 지정해준 이름 'profile_edit'을 이용한다.
+        - 'accounts/edit/' 이다.
+- else라면 POST 통신이 아닌 GET 통신이다.
+    - 프로필 페이지로 이동을 했을 때 GET 통신으로 form을 불러와야 한다.
+    - 일단 user의 정보를 토대로 form을 채워진 것을 보여줘야 하기 때문에 instance로 user를 준다.
+- 그 후, render 함수를 이용해 profile_edit_form.html을 보여준다.
+    - form 오브젝트를 form 이라는 이름으로 보내준다.    
+
+### template
+
+```html
+{% extends "accounts/layout.html" %} 
+{% load bootstrap4 %} 
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6 offset-sm-3">
+      {% include "_form.html" with form_title="프로필 수정" submit_label="프로필 수정" %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+```
+
+- 이것이 profile_edit_form.html 이다.
+- 미리 설정해 놓은 _form.html을 include해서 불러온다. 
+    - form_title과 submit_label을 따로 설정해준다.
+    - _form.html을 왜 미리 설정해두었냐면, 게시글 생성과 수정, 회원가입, 로그인 등등 다 같은 폼을 가지고 있어서 설정해둔것이다.
+        - 하지만 회원가입과 로그인에서 카카오 소셜로그인이 추가되면서 회원가입 html과 로그인 html에서는 include 하지 않고 따로 다시 구현하였다.
+
+```html
+{% load bootstrap4 static %}
+<div class="card">
+  {% if form_title %}
+  <div class="card-header">{{ form_title }}</div>
+  {% endif %}
+  <div class="card-body">
+    {% if form %}
+        <form action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            {% buttons %}
+                  <button type="submit" class="btn btn-primary">
+                    {{ submit_label|default:"Submit" }}
+                  </button>
+            {% endbuttons %}
+        </form>
+    {% else %}
+        <div class="alert alert-danger">form 객체를 지정해주세요.</div>
+    {% endif %}
+  </div>
+</div>
+```
+
+- form을 가져와서 보여준다.
+
+### form
+
+```python
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = {'first_name', 'last_name', 'website_url',
+                  'bio', 'email', 'phone_number', 'gender', 'avatar'}
+```
+
+- profile 수정을 위해 프로필 form을 설정해준다.
+- model을 User로 설정하고 fields들을 User 모델에서 설정했던 필드들을 가져온다.
+
+### url
+
+```python
+path('edit/', views.profile_edit, name='profile_edit')
+```
+
+- 프로필 수정을 위한 url을 설정해준다.
+
+## 비밀번호 변경 기능
+
+### views
+
+```python
+from django.contrib.auth.views import PasswordChangeView as AuthPasswordChangeView
+class PasswordChangeView(LoginRequiredMixin, AuthPasswordChangeView):
+    success_url = reverse_lazy("password_change")
+    template_name = 'accounts/password_change_form.html'
+    form_class = PasswordChangeForm
+
+    def form_valid(self, form):
+        messages.success(self.request, "암호를 변경했습니다.")
+        return super().form_valid(form)
+```
+
+- 장고에서 제공해주는 PasswordChangeView class를 AuthPasswordChangeView로 재정의한다.
+- 재정의한 class를 상속받아서 안에 존재하는 field들을 custom 해준다.
+    - success_url은 reverse를 이용해서 정의해주는데, 여기서 reverse_lazy로 재정의해준다.
+    - 밑에서 설명하겠지만 import 할 때, python은 class를 evaluate 하기 때문이다.
+- template과 form_class도 재정의 해준다.
+
+    ```python
+    class PasswordChangeForm(SetPasswordForm):
+    """
+    A form that lets a user change their password by entering their old
+    password.
+    """
+
+    error_messages = {
+        **SetPasswordForm.error_messages,
+        "password_incorrect": _(
+            "Your old password was entered incorrectly. Please enter it again."
+        ),
+    }
+    old_password = forms.CharField(
+        label=_("Old password"),
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={"autocomplete": "current-password", "autofocus": True}
+        ),
+    )
+
+    field_order = ["old_password", "new_password1", "new_password2"]
+
+    def clean_old_password(self):
+        """
+        Validate that the old_password field is correct.
+        """
+        old_password = self.cleaned_data["old_password"]
+        if not self.user.check_password(old_password):
+            raise ValidationError(
+                self.error_messages["password_incorrect"],
+                code="password_incorrect",
+            )
+        return old_password
+    ```
+
+
+- PasswordChangeForm 안에서는 이전 비밀번호를 확인하고 유효성 검사를 해준다.
+
+- SetPasswordForm을 상속받는다.
+
+```python
+class SetPasswordForm(forms.Form):
+    """
+    A form that lets a user change set their password without entering the old
+    password
+    """
+
+    error_messages = {
+        "password_mismatch": _("The two password fields didn’t match."),
+    }
+    new_password1 = forms.CharField(
+        label=_("New password"),
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        strip=False,
+        help_text=password_validation.password_validators_help_text_html(),
+    )
+    new_password2 = forms.CharField(
+        label=_("New password confirmation"),
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_new_password2(self):
+        password1 = self.cleaned_data.get("new_password1")
+        password2 = self.cleaned_data.get("new_password2")
+        if password1 and password2:
+            if password1 != password2:
+                raise ValidationError(
+                    self.error_messages["password_mismatch"],
+                    code="password_mismatch",
+                )
+        password_validation.validate_password(password2, self.user)
+        return password2
+
+    def save(self, commit=True):
+        password = self.cleaned_data["new_password1"]
+        self.user.set_password(password)
+        if commit:
+            self.user.save()
+        return self.user
+```
+
+- new_password1과 new_password2를 유효성 검사해서 일치하는지, 패스워드 양식에 맞는지 체크해주고 return으로 password2를 준다.
+- 하지만 이렇게 상속만 받고 SetPasswordForm을 custom 하지 않으면 예전 비밀번호와 바꿀 비밀번호가 같더라도 동작을 하게 된다.
+    - 예외 조건을 걸기 위해서 form에서 custom 하도록 하자.
+
+
+#### reverse
+
+- Django의 reverse() 함수는 viewname과 args 및 kwargs를 인자로 받아 url string을 반환한다.
+
+- 예컨대 news app에 다음과 같은 url이 등록되어 있다고 하자.
+
+```python
+from news import views
+
+path('archive', views.archive, name='news-archive')
+```
+
+- 이 때 어떤 View 함수에서 위 url로 리다이렉트하고 싶다면 다음과 같이 사용한다.
+
+```python
+from django.urls import reverse
+
+def myview(request):
+    return HttpResponseRedirect(reverse('news:news-archive'))
+```
+
+- reverse()함수를 사용하면, url이 변경되더라도 View의 코드를 수정할 필요가 없다. 
+- 일반적으로 url이 수정될 확률이 높은 점을 고려하면 합리적인 설계라 할 것이다.
+
+
+##### reverse_lazy
+
+- reverse_lazy는 reverse와 동일한 동작을 함수 호출시 곧바로 처리하지 않고, 나중에 해당 변수가 직접 접근되거나 메서드가 호출되었을 때 evaluate한다.
+
+- reverse는 내부에서 urlconf를 참조하기 때문에 제대로 동작하기 위해서는 프로젝트의 urlconf가 모두 로드되어야 한다. 
+    - 그러나 때에 따라 urlconf가 로드되기 전에 해당 값을 참조해야 할 수도 있다.
+
+- 예컨대 아래의 경우 reverse로 success_url을 정의하면 동작하지 않는다.
+
+```python
+class JobCreateView(CreateView):
+    template_name = 'company/job.html'
+    form_class = JobForm
+    success_url = reverse_lazy('job')
+    # FIXME
+    # success_url = reverse('job')
+```
+
+- 이는 Python은 모듈이 import될 때 class들을 evaluate하기 때문이다.
+
+- 예시
+
+```python
+# test.py
+def a():
+	print('test1')
+
+class B:
+	print('test2')
+```
+
+```shell
+>>> import test
+>>> test2
+```
+
+- 따라서 이 경우 success_url을 reverse_lazy를 사용하여 정의하고, 나중에 필요할 때 reverse가 일어나도록 해야한다.
+
+### form
+
+```python
+class PasswordChangeForm(AuthPasswordChangeForm):
+    def clean_new_password2(self):
+        old_password = self.cleaned_data.get("old_password")
+        new_password2 = super().clean_new_password2()
+        if old_password == new_password2:
+            raise forms.ValidationError("새로운 암호를 입력해주세요.")
+        return new_password2
+```
+
+- 현재 PasswordChangeForm을 상속을 받아서 class 안에 존재하는 clean_new_password2 함수를 재정의 해준다.
+    - PasswordChangeForm에서는 cleaned_data["old_password"]로 입력받은 old_password를 가져올 수 있다.
+    - clean_new_password2 함수는 PasswordChangeForm class가 SetPasswordForm을 상속받는다.
+    - SetPAsswordForm에는 clean_new_password2 함수가 존재한다.
+    - super().clean_new_password2를 이용해 return 값인 new_password2를 받아온다.
+    - super()는 상속의 대상인 부모 클래스를 호출하는 함수이다.
+    - PasswordChangeForm 클래스를 호출하는데 PasswordChangeForm은 SetPasswordForm을 상속 받고 있기 때문에 SetPasswordForm 함수를 호출할 수 있다.
+- new_password1과 new_password2는 SetPasswordForm에서 같은지 유효성 검사를 해준다.
+- new_password2를 리턴 받았따는것은 이 유효성 검사를 통과했다는 뜻.
+- 그래서 예전 비밀번호와 바꾸고자 하는 비밀번호가 같은 경우면 에러를 출력해주도록 설정해준다. 
+
+- django/views/generic/edit.py 로 들어가서 FormMixin class를 보면 form_valid 함수가 선언되어 있다.
+
+```python
+def form_valid(self, form):
+    """If the form is valid, redirect to the supplied URL."""
+    return HttpResponseRedirect(self.get_success_url())
+```
+
+- get_success_url로 redirect를 시켜준다.
+- 그리고 messages를 이용하여 성공 메세지를 띄워준다.
+
+### url
+
+```python
+path('password_change/', views.password_change, name='password_change')
+```
+
+- 이렇게 설정을 해준다.    
+- 왜 class이름과 다른가?
+    - view 단에서 password_change = PasswordChangeView.as_view() 로 정의를 해주었기 때문이다.
