@@ -1,5 +1,5 @@
 # Django_Personal_Project1
-
+https://donghyeokcoding.notion.site/bc555bb9511b4a81832b0af97b8fe153
 ## UserModel
 
 **field**
