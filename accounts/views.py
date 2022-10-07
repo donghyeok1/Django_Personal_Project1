@@ -125,11 +125,11 @@ password_change = PasswordChangeView.as_view()
 
 @login_required
 def user_follow(request, username):
-    follow_user = get_object_or_404(User, username=username, is_active=True)
-
+    follow_user = get_object_or_404(get_user_model(), username=username, is_active=True)
+    user = get_object_or_404(get_user_model(), pk=request.user.pk)
     # request.user가 follow_user를 팔로우 할려고 합니다.
-    request.user.following_set.add(follow_user)
-    follow_user.follower_set.add(request.user)
+    user.following_set.add(follow_user)
+    follow_user.follower_set.add(user)
 
     messages.success(request, f"{follow_user}님을 팔로우했습니다.")
     redirect_url = request.META.get("HTTP_REFERER", "root")
@@ -139,11 +139,12 @@ def user_follow(request, username):
 
 @login_required
 def user_unfollow(request, username):
-    unfollow_user = get_object_or_404(User, username=username, is_active=True)
+    unfollow_user = get_object_or_404(get_user_model(), username=username, is_active=True)
 
-    request.user.following_set.remove(unfollow_user)
-    unfollow_user.follower_set.remove(request.user)
+    user = get_object_or_404(get_user_model(), pk=request.user.pk)
 
+    unfollow_user.follower_set.remove(user)
+    user.following_set.remove(unfollow_user)
     messages.success(request, f"{unfollow_user}님을 언팔했습니다.")
     redirect_url = request.META.get("HTTP_REFERER", "root")
     # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.

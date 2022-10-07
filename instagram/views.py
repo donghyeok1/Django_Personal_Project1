@@ -56,6 +56,7 @@ def post_new(request):
             # TODO 나중에 구글링 해보기!
             messages.success(request, "포스팅을 저장했습니다.")
             return redirect(post)
+        # TODO 이해 못함 알바 갔다와서 다시보기
     #     redirect를 하려면 usermodel에서 한것처럼 get_absolute_url이 있어야함.
 
     else:
@@ -86,7 +87,6 @@ def post_like(request, pk):
     # HTTP_REFERE이 있으면 가져오고 없으면 root를 가져오겠다.
     return redirect(redirect_url)
 
-
 @login_required
 def post_unlike(request, pk):
     post = get_object_or_404(Post, pk=pk)
@@ -101,6 +101,7 @@ def user_page(request, username):
     page_user = get_object_or_404(
         get_user_model(), username=username, is_active=True)
     # 현재 접근이 허용된 사람만 보겠다.
+    # post_list = page_user.my_post_set.all()
     post_list = Post.objects.filter(author=page_user)
     post_list_count = post_list.count()
     # 실제 데이터베이스에 count 쿼리를 던지게 됨.

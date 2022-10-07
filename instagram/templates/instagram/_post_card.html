@@ -7,7 +7,6 @@
         </a>
     </div>
     <div class="card-body">
-
         <img src="{% thumbnail post.photo 512x512 crop %}" alt="{{ post.caption }}" style="width: 100%;"/>
         <div>
             {% if post|is_like_user:user %}
@@ -43,6 +42,7 @@
 {#https://docs.djangoproject.com/en/4.1/ref/contrib/humanize/#}
 {#_post_card 단에서 구현할것!#}
 {#해당 링크로 들어가서 설명 잘 읽고 따라하면 됨.#}
+
 {#        html에서는 파라미터를 줄 수 없기 떄문에 파라미터를 주려면 해당 앱에#}
 {#        templatetags라는 디렉토리를 만듬#}
 {#https://docs.djangoproject.com/en/1.10/howto/custom-template-tags/#}
@@ -72,7 +72,7 @@
 {#                    그리고 layout 파일로 가서 추가#}
 {#                    그 후 페이지에 가서 네트워크를 열고 jquery를 치면 import 된걸 확인 할 수 잇음.#}
 {#                    https://malsup.com/jquery/form/#ajaxForm 여기서 문서를 보면서 이해 가능#}
-{#$document).ready 와 위에 function만 쓴건 같은 문법임. 축약 문법이다.#}
+{#$(document).ready(function() 와 위에 function만 쓴건 같은 문법임. 축약 문법이다.#}
 {#                    ajaxSubmit 으로 가서 보면 됨.#}
 
                     var options = {

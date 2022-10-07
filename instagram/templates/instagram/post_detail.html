@@ -1,103 +1,108 @@
 {% extends "instagram/layout.html" %}
 {% load thumbnail humanize instagram_tags bootstrap4 %}
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <img src="{{ post.author.avatar_url }}" style="width: 32px; height: 32px;"/>
-            <a href="{% url "instagram:user_page" post.author.username %}">
-                {{ post.author.name }}
-            </a>
-        </div>
-        <div class="card-body">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6 offset-sm-3">
+                <div class="card">
+                    <div class="card-header">
+                        <img src="{{ post.author.avatar_url }}" style="width: 32px; height: 32px;"/>
+                        <a href="{% url "instagram:user_page" post.author.username %}">
+                            {{ post.author.name }}
+                        </a>
+                    </div>
+                    <div class="card-body">
 
-            <img src="{{ post.photo.url }}" style="width: 512px; height: 512px;"/>
-            <div>
-                {% if post|is_like_user:user %}
-                    <a href="{% url "instagram:post_unlike" post.pk %}" style="color: inherit;">
-                        <i class="fa-solid fa-heart"></i>
-                    {#            스타일을 inherit로 주게 되면 색깔이 바뀌지 않음!#}
-                    </a>
-                {% else %}
-                    <a href="{% url "instagram:post_like" post.pk %}" style="color: inherit;">
-                        <i class="fa-regular fa-heart"></i>
-                    </a>
-                {% endif %}
-            </div>
-                <div id = "post-detail-{{ post.pk }}-comment-list" class="comment-list mt-3 mb-3">
-                    {% for comment in post.comment_set.all %}
-                        {% include "instagram/_comment.html" %}
-                    {% endfor %}
+                        <img src="{{ post.photo.url }}" style="width: 512px; height: 512px;"/>
+                        <div>
+                            {% if post|is_like_user:user %}
+                                <a href="{% url "instagram:post_unlike" post.pk %}" style="color: inherit;">
+                                    <i class="fa-solid fa-heart"></i>
+                                {#            스타일을 inherit로 주게 되면 색깔이 바뀌지 않음!#}
+                                </a>
+                            {% else %}
+                                <a href="{% url "instagram:post_like" post.pk %}" style="color: inherit;">
+                                    <i class="fa-regular fa-heart"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div id = "post-detail-{{ post.pk }}-comment-list" class="comment-list mt-3 mb-3">
+                            {% for comment in post.comment_set.all %}
+                                {% include "instagram/_comment.html" %}
+                            {% endfor %}
+                        </div>
+                        <div>
+                            {% for tag in post.tag_set.all %}
+                                <span class="badge text-bg-primary">#{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                        <div>
+                                <small>
+                                    {{ post.created_at|naturaltime }}
+                                </small>
+                        </div>
+                {#장고 단에 여러 패키지가 있는데 humanize라는 앱이 있다.#}
+                {#필터 적용해주는 앱임.#}
+                {#https://docs.djangoproject.com/en/4.1/ref/contrib/humanize/#}
+                {#_post_card 단에서 구현할것!#}
+                {#해당 링크로 들어가서 설명 잘 읽고 따라하면 됨.#}
+                {#        html에서는 파라미터를 줄 수 없기 떄문에 파라미터를 주려면 해당 앱에#}
+                {#        templatetags라는 디렉토리를 만듬#}
+                {#https://docs.djangoproject.com/en/1.10/howto/custom-template-tags/#}
+                {#        하라는데로 똑같이 하면 됨#}
+                {#        사용할 템플릿 단에서 load 해줘야함 지금 해당 템플릿 맨 위에처럼#}
+                {#        Font Awesome이라는 곳에서 하트 아이콘 가져오기#}
+                {#        layout단에다가 css에 적용 https 뺴고 적용!#}
+                {#        그렇게 적용한 후 다시 font awesome 접속#}
+                {#        hearts 검색#}
+                    </div>
+                    <div class="card-footer">
+                        <form id="post-detail-{{ post.pk }}-comment-form" action="{% url "instagram:comment_new" post.pk %}" method="POST">
+                            {% csrf_token %}
+                            {% bootstrap_form comment_form %}
+                            <input type="submit" value="댓글 쓰기" class="btn btn-primary btn-block">
+                        </form>
+                {#        이렇게 쓰면 메세지 창이 너무 크게 나옴. 이 위젯을 커스텀 하고 싶으면 form에서 바꿔야함.#}
+
+
+                        <script>
+                            $(function(){
+                                var form_id = "post-detail-{{ post.pk }}-comment-form";
+                                $("#" + form_id).submit(function(e){
+                                    e.preventDefault();
+                                {#https://malsup.github.io/jquery.form.js#}
+                {#                    다운로드 받기 후 static 파일에 옮기기#}
+                {#                    그리고 layout 파일로 가서 추가#}
+                {#                    그 후 페이지에 가서 네트워크를 열고 jquery를 치면 import 된걸 확인 할 수 잇음.#}
+                {#                    https://malsup.com/jquery/form/#ajaxForm 여기서 문서를 보면서 이해 가능#}
+                {#$document).ready 와 위에 function만 쓴건 같은 문법임. 축약 문법이다.#}
+                {#                    ajaxSubmit 으로 가서 보면 됨.#}
+
+                                    var options = {
+                                        success: function(responseText, statusText, xhr, $form){
+                                            console.group("ajaxSubmit response");
+                                            $("#post-detail-{{ post.pk }}-comment-list").prepend(responseText);
+                                            console.log(responseText);
+                                            console.log(statusText);
+                                            console.log(xhr);
+                                            console.log($form);
+                                            console.groupEnd();
+                                        },
+                                        clearForm: true,
+                                    }
+                                    $(this).ajaxSubmit(options);
+                                {#    jquery를 통해서 submit이 되는 것임.#}
+
+                                {#    거짓으로 리턴한다던지, 이벤트 객체 e로 e.preventDefault로#}
+                {#                    호출을 해주면 이벤트가 더이상 전파되지 않고 현재 상황에서 멈추게 됨#}
+                                })
+                            })
+                        </script>
+                {#        jQuery를 쓰는 방법#}
+                {#        id를 지정#}
+                    </div>
                 </div>
-            <div>
-                {% for tag in post.tag_set.all %}
-                    <span class="badge text-bg-primary">#{{ tag.name }}</span>
-                {% endfor %}
             </div>
-            <div>
-                    <small>
-                        {{ post.created_at|naturaltime }}
-                    </small>
-            </div>
-    {#장고 단에 여러 패키지가 있는데 humanize라는 앱이 있다.#}
-    {#필터 적용해주는 앱임.#}
-    {#https://docs.djangoproject.com/en/4.1/ref/contrib/humanize/#}
-    {#_post_card 단에서 구현할것!#}
-    {#해당 링크로 들어가서 설명 잘 읽고 따라하면 됨.#}
-    {#        html에서는 파라미터를 줄 수 없기 떄문에 파라미터를 주려면 해당 앱에#}
-    {#        templatetags라는 디렉토리를 만듬#}
-    {#https://docs.djangoproject.com/en/1.10/howto/custom-template-tags/#}
-    {#        하라는데로 똑같이 하면 됨#}
-    {#        사용할 템플릿 단에서 load 해줘야함 지금 해당 템플릿 맨 위에처럼#}
-    {#        Font Awesome이라는 곳에서 하트 아이콘 가져오기#}
-    {#        layout단에다가 css에 적용 https 뺴고 적용!#}
-    {#        그렇게 적용한 후 다시 font awesome 접속#}
-    {#        hearts 검색#}
-        </div>
-        <div class="card-footer">
-            <form id="post-detail-{{ post.pk }}-comment-form" action="{% url "instagram:comment_new" post.pk %}" method="POST">
-                {% csrf_token %}
-                {% bootstrap_form comment_form %}
-                <input type="submit" value="댓글 쓰기" class="btn btn-primary btn-block">
-            </form>
-    {#        이렇게 쓰면 메세지 창이 너무 크게 나옴. 이 위젯을 커스텀 하고 싶으면 form에서 바꿔야함.#}
-
-
-            <script>
-                $(function(){
-                    var form_id = "post-detail-{{ post.pk }}-comment-form";
-                    $("#" + form_id).submit(function(e){
-                        e.preventDefault();
-                    {#https://malsup.github.io/jquery.form.js#}
-    {#                    다운로드 받기 후 static 파일에 옮기기#}
-    {#                    그리고 layout 파일로 가서 추가#}
-    {#                    그 후 페이지에 가서 네트워크를 열고 jquery를 치면 import 된걸 확인 할 수 잇음.#}
-    {#                    https://malsup.com/jquery/form/#ajaxForm 여기서 문서를 보면서 이해 가능#}
-    {#$document).ready 와 위에 function만 쓴건 같은 문법임. 축약 문법이다.#}
-    {#                    ajaxSubmit 으로 가서 보면 됨.#}
-
-                        var options = {
-                            success: function(responseText, statusText, xhr, $form){
-                                console.group("ajaxSubmit response");
-                                $("#post-detail-{{ post.pk }}-comment-list").prepend(responseText);
-                                console.log(responseText);
-                                console.log(statusText);
-                                console.log(xhr);
-                                console.log($form);
-                                console.groupEnd();
-                            },
-                            clearForm: true,
-                        }
-                        $(this).ajaxSubmit(options);
-                    {#    jquery를 통해서 submit이 되는 것임.#}
-
-                    {#    거짓으로 리턴한다던지, 이벤트 객체 e로 e.preventDefault로#}
-    {#                    호출을 해주면 이벤트가 더이상 전파되지 않고 현재 상황에서 멈추게 됨#}
-                    })
-                })
-            </script>
-    {#        jQuery를 쓰는 방법#}
-    {#        id를 지정#}
-
         </div>
     </div>
 {% endblock %}
