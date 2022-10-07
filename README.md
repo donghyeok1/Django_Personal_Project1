@@ -1898,5 +1898,4 @@
     [https://github.com/SmileyChris/easy-thumbnails](https://github.com/SmileyChris/easy-thumbnails)
     
     [사용법](https://www.notion.so/8dc0d44b118a42d5b762bab56ff60b4c)
-- signup_form과 login_form html에 추가해준다.
-- static 폴더에 있는 kakao_logo를 불러와주고 해당 이미지를 클릭하면 accounts 앱의 signup-kakao라는 name을 가진 url을 호출한다.
+
